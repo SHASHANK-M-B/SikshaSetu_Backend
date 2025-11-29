@@ -1,0 +1,64 @@
+const studentModel = require('../models/studentModel');
+const organizationModel = require('../../Organization/models/organizationModel');
+const { sendEmail, emailTemplates } = require('../../utils/emailService');
+
+const validateEmail = (email) => {
+  const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return regex.test(email);
+};
+
+exports.register = async (req, res) => {
+  try {
+    const { studentName, orgCode, subject, email } = req.body;
+
+    if (!studentName || !orgCode || !subject || !email) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
+    if (!validateEmail(email)) {
+      return res.status(400).json({ message: 'Invalid email format' });
+    }
+
+    const organization = await organizationModel.getOrganizationByOrgCode(orgCode);
+    if (!organization) {
+      return res.status(400).json({ message: 'Invalid organization code' });
+    }
+
+    if (organization.status !== 'approved') {
+      return res.status(400).json({ message: 'Organization not approved yet' });
+    }
+
+    const existingStudent = await studentModel.getStudentByEmail(email);
+    if (existingStudent) {
+      return res.status(400).json({ message: 'Student with this email already exists' });
+    }
+
+    const student = await studentModel.createStudent({
+      studentName,
+      orgId: organization.orgId,
+      orgCode,
+      subject,
+      email
+    });
+
+    const emailContent = emailTemplates.studentPendingApproval(studentName, organization.orgName);
+    await sendEmail(email, emailContent.subject, emailContent.html);
+
+    res.status(201).json({
+      message: 'Registration successful. Awaiting organization approval.',
+      studentId: student.studentId
+    });
+  } catch (error) {
+    console.error('Student registration error:', error);
+    res.status(500).json({ message: 'Registration failed' });
+  }
+};
+
+exports.getSubjects = async (req, res) => {
+  try {
+    res.status(200).json({ subjects: studentModel.subjectsList });
+  } catch (error) {
+    console.error('Error fetching subjects:', error);
+    res.status(500).json({ message: 'Failed to fetch subjects' });
+  }
+};

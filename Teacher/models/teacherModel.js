@@ -1,0 +1,72 @@
+const { db, admin } = require('../../config/Firebase');
+
+const teacherCollection = db.collection('teachers');
+
+const subjectsList = [
+  "AI",
+  "VLSI",
+  "Renewable Energy",
+  "Others"
+];
+
+const createTeacher = async (teacherData) => {
+  const teacherRef = teacherCollection.doc();
+  const teacherId = teacherRef.id;
+
+  const teacher = {
+    teacherId,
+    name: teacherData.name,
+    orgId: teacherData.orgId,
+    orgCode: teacherData.orgCode,
+    subject: teacherData.subject,
+    customSubject: teacherData.customSubject || null,
+    email: teacherData.email,
+    password: null,
+    status: 'pending',
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  };
+
+  await teacherRef.set(teacher);
+  return { teacherId, ...teacher };
+};
+
+const getTeacherByEmail = async (email) => {
+  const snapshot = await teacherCollection.where('email', '==', email).limit(1).get();
+  if (snapshot.empty) return null;
+  return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
+};
+
+const getTeacherById = async (teacherId) => {
+  const doc = await teacherCollection.doc(teacherId).get();
+  if (!doc.exists) return null;
+  return { id: doc.id, ...doc.data() };
+};
+
+const getPendingTeachersByOrgId = async (orgId) => {
+  const snapshot = await teacherCollection
+    .where('orgId', '==', orgId)
+    .where('status', '==', 'pending')
+    .get();
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+const updateTeacherStatus = async (teacherId, status, hashedPassword) => {
+  const updateData = {
+    status,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  };
+
+  if (hashedPassword) updateData.password = hashedPassword;
+
+  await teacherCollection.doc(teacherId).update(updateData);
+};
+
+module.exports = {
+  subjectsList,
+  createTeacher,
+  getTeacherByEmail,
+  getTeacherById,
+  getPendingTeachersByOrgId,
+  updateTeacherStatus
+};
