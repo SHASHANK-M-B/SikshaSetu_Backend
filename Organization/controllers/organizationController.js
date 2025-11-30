@@ -45,11 +45,14 @@ exports.register = async (req, res) => {
       address
     });
 
+    // Send email with proper error logging
     sendEmail(
       email,
       emailTemplates.organizationPendingApproval(orgName).subject,
       emailTemplates.organizationPendingApproval(orgName).html
-    ).catch(() => {});
+    ).catch((error) => {
+      console.error('Email send error:', error);
+    });
 
     res.status(201).json({
       message: 'Registration successful. Awaiting admin approval.',
@@ -148,7 +151,9 @@ exports.approveTeacher = async (req, res) => {
           teacher.email,
           password
         ).html
-      ).catch(() => {})
+      ).catch((error) => {
+        console.error('Email send error:', error);
+      })
     ]);
 
     res.status(200).json({ message: 'Teacher approved successfully' });
@@ -187,7 +192,9 @@ exports.declineTeacher = async (req, res) => {
         teacher.email,
         emailTemplates.teacherRejected(teacher.name, organization.orgName, reason).subject,
         emailTemplates.teacherRejected(teacher.name, organization.orgName, reason).html
-      ).catch(() => {})
+      ).catch((error) => {
+        console.error('Email send error:', error);
+      })
     ]);
 
     res.status(200).json({ message: 'Teacher declined successfully' });
@@ -259,7 +266,9 @@ exports.approveStudent = async (req, res) => {
           student.email,
           password
         ).html
-      ).catch(() => {})
+      ).catch((error) => {
+        console.error('Email send error:', error);
+      })
     ]);
 
     res.status(200).json({ message: 'Student approved successfully' });
@@ -298,7 +307,9 @@ exports.declineStudent = async (req, res) => {
         student.email,
         emailTemplates.studentRejected(student.studentName, organization.orgName, reason).subject,
         emailTemplates.studentRejected(student.studentName, organization.orgName, reason).html
-      ).catch(() => {})
+      ).catch((error) => {
+        console.error('Email send error:', error);
+      })
     ]);
 
     res.status(200).json({ message: 'Student declined successfully' });

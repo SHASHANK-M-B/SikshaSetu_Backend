@@ -30,7 +30,7 @@ const generateOTP = () => {
 };
 
 const hashPassword = async (password) => {
-  return await bcrypt.hash(password, 1);
+  return await bcrypt.hash(password, 10);
 };
 
 const comparePassword = async (password, hashedPassword) => {
