@@ -31,15 +31,24 @@ exports.approveOrganization = async (req, res) => {
     const password = generatePassword();
     const hashedPassword = await hashPassword(password);
 
-    await organizationModel.updateOrganizationStatus(id, 'approved', orgCode, hashedPassword);
-
-    const emailContent = emailTemplates.organizationApproved(
-      organization.orgName,
-      organization.email,
-      password,
-      orgCode
-    );
-    await sendEmail(organization.email, emailContent.subject, emailContent.html);
+    await Promise.all([
+      organizationModel.updateOrganizationStatus(id, 'approved', orgCode, hashedPassword),
+      sendEmail(
+        organization.email,
+        emailTemplates.organizationApproved(
+          organization.orgName,
+          organization.email,
+          password,
+          orgCode
+        ).subject,
+        emailTemplates.organizationApproved(
+          organization.orgName,
+          organization.email,
+          password,
+          orgCode
+        ).html
+      ).catch(() => {})
+    ]);
 
     res.status(200).json({ message: 'Organization approved successfully' });
   } catch (error) {
@@ -62,10 +71,14 @@ exports.rejectOrganization = async (req, res) => {
       return res.status(400).json({ message: 'Organization already processed' });
     }
 
-    await organizationModel.updateOrganizationStatus(id, 'rejected', null, null);
-
-    const emailContent = emailTemplates.organizationRejected(organization.orgName, reason);
-    await sendEmail(organization.email, emailContent.subject, emailContent.html);
+    await Promise.all([
+      organizationModel.updateOrganizationStatus(id, 'rejected', null, null),
+      sendEmail(
+        organization.email,
+        emailTemplates.organizationRejected(organization.orgName, reason).subject,
+        emailTemplates.organizationRejected(organization.orgName, reason).html
+      ).catch(() => {})
+    ]);
 
     res.status(200).json({ message: 'Organization rejected successfully' });
   } catch (error) {
@@ -98,20 +111,30 @@ exports.approveTeacher = async (req, res) => {
       return res.status(400).json({ message: 'Teacher already processed' });
     }
 
-    const organization = await organizationModel.getOrganizationById(teacher.orgId);
-
     const password = generatePassword();
-    const hashedPassword = await hashPassword(password);
+    const [hashedPassword, organization] = await Promise.all([
+      hashPassword(password),
+      organizationModel.getOrganizationById(teacher.orgId)
+    ]);
 
-    await teacherModel.updateTeacherStatus(id, 'approved', hashedPassword);
-
-    const emailContent = emailTemplates.teacherApproved(
-      teacher.name,
-      organization.orgName,
-      teacher.email,
-      password
-    );
-    await sendEmail(teacher.email, emailContent.subject, emailContent.html);
+    await Promise.all([
+      teacherModel.updateTeacherStatus(id, 'approved', hashedPassword),
+      sendEmail(
+        teacher.email,
+        emailTemplates.teacherApproved(
+          teacher.name,
+          organization.orgName,
+          teacher.email,
+          password
+        ).subject,
+        emailTemplates.teacherApproved(
+          teacher.name,
+          organization.orgName,
+          teacher.email,
+          password
+        ).html
+      ).catch(() => {})
+    ]);
 
     res.status(200).json({ message: 'Teacher approved successfully' });
   } catch (error) {
@@ -136,10 +159,14 @@ exports.rejectTeacher = async (req, res) => {
 
     const organization = await organizationModel.getOrganizationById(teacher.orgId);
 
-    await teacherModel.updateTeacherStatus(id, 'rejected', null);
-
-    const emailContent = emailTemplates.teacherRejected(teacher.name, organization.orgName, reason);
-    await sendEmail(teacher.email, emailContent.subject, emailContent.html);
+    await Promise.all([
+      teacherModel.updateTeacherStatus(id, 'rejected', null),
+      sendEmail(
+        teacher.email,
+        emailTemplates.teacherRejected(teacher.name, organization.orgName, reason).subject,
+        emailTemplates.teacherRejected(teacher.name, organization.orgName, reason).html
+      ).catch(() => {})
+    ]);
 
     res.status(200).json({ message: 'Teacher rejected successfully' });
   } catch (error) {
@@ -172,20 +199,30 @@ exports.approveStudent = async (req, res) => {
       return res.status(400).json({ message: 'Student already processed' });
     }
 
-    const organization = await organizationModel.getOrganizationById(student.orgId);
-
     const password = generatePassword();
-    const hashedPassword = await hashPassword(password);
+    const [hashedPassword, organization] = await Promise.all([
+      hashPassword(password),
+      organizationModel.getOrganizationById(student.orgId)
+    ]);
 
-    await studentModel.updateStudentStatus(id, 'approved', hashedPassword);
-
-    const emailContent = emailTemplates.studentApproved(
-      student.studentName,
-      organization.orgName,
-      student.email,
-      password
-    );
-    await sendEmail(student.email, emailContent.subject, emailContent.html);
+    await Promise.all([
+      studentModel.updateStudentStatus(id, 'approved', hashedPassword),
+      sendEmail(
+        student.email,
+        emailTemplates.studentApproved(
+          student.studentName,
+          organization.orgName,
+          student.email,
+          password
+        ).subject,
+        emailTemplates.studentApproved(
+          student.studentName,
+          organization.orgName,
+          student.email,
+          password
+        ).html
+      ).catch(() => {})
+    ]);
 
     res.status(200).json({ message: 'Student approved successfully' });
   } catch (error) {
@@ -210,10 +247,14 @@ exports.rejectStudent = async (req, res) => {
 
     const organization = await organizationModel.getOrganizationById(student.orgId);
 
-    await studentModel.updateStudentStatus(id, 'rejected', null);
-
-    const emailContent = emailTemplates.studentRejected(student.studentName, organization.orgName, reason);
-    await sendEmail(student.email, emailContent.subject, emailContent.html);
+    await Promise.all([
+      studentModel.updateStudentStatus(id, 'rejected', null),
+      sendEmail(
+        student.email,
+        emailTemplates.studentRejected(student.studentName, organization.orgName, reason).subject,
+        emailTemplates.studentRejected(student.studentName, organization.orgName, reason).html
+      ).catch(() => {})
+    ]);
 
     res.status(200).json({ message: 'Student rejected successfully' });
   } catch (error) {

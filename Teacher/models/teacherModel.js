@@ -51,6 +51,14 @@ const getPendingTeachersByOrgId = async (orgId) => {
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
+const getApprovedTeachersByOrgId = async (orgId) => {
+  const snapshot = await teacherCollection
+    .where('orgId', '==', orgId)
+    .where('status', '==', 'approved')
+    .get();
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
 const updateTeacherStatus = async (teacherId, status, hashedPassword) => {
   const updateData = {
     status,
@@ -68,5 +76,6 @@ module.exports = {
   getTeacherByEmail,
   getTeacherById,
   getPendingTeachersByOrgId,
+  getApprovedTeachersByOrgId,
   updateTeacherStatus
 };

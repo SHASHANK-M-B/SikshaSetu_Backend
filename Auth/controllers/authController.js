@@ -13,7 +13,6 @@ const {
 } = require('../services/authService');
 const { sendEmail, emailTemplates } = require('../../utils/emailService');
 
-// Organization Login with Password
 exports.organizationLogin = async (req, res) => {
   try {
     const { orgCode, email, password } = req.body;
@@ -47,7 +46,7 @@ exports.organizationLogin = async (req, res) => {
       orgCode: organization.orgCode
     });
 
-    await saveToken(organization.orgId, token, 'organization');
+    saveToken(organization.orgId, token, 'organization').catch(() => {});
 
     res.cookie('authToken', token, {
       httpOnly: true,
@@ -73,7 +72,6 @@ exports.organizationLogin = async (req, res) => {
   }
 };
 
-// Organization Login with OTP - Step 1: Request OTP
 exports.organizationRequestOTP = async (req, res) => {
   try {
     const { orgCode, email } = req.body;
@@ -96,10 +94,15 @@ exports.organizationRequestOTP = async (req, res) => {
     }
 
     const otp = generateOTP();
-    await saveOTP(email, otp, 'organization');
-
-    const emailContent = emailTemplates.loginOTP(organization.orgName, otp);
-    await sendEmail(email, emailContent.subject, emailContent.html);
+    
+    await Promise.all([
+      saveOTP(email, otp, 'organization'),
+      sendEmail(
+        email, 
+        emailTemplates.loginOTP(organization.orgName, otp).subject,
+        emailTemplates.loginOTP(organization.orgName, otp).html
+      ).catch(() => {})
+    ]);
 
     res.status(200).json({ message: 'OTP sent to your email' });
   } catch (error) {
@@ -108,7 +111,6 @@ exports.organizationRequestOTP = async (req, res) => {
   }
 };
 
-// Organization Login with OTP - Step 2: Verify OTP
 exports.organizationVerifyOTP = async (req, res) => {
   try {
     const { orgCode, email, otp } = req.body;
@@ -117,7 +119,11 @@ exports.organizationVerifyOTP = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    const organization = await organizationModel.getOrganizationByOrgCode(orgCode);
+    const [organization, otpData] = await Promise.all([
+      organizationModel.getOrganizationByOrgCode(orgCode),
+      getOTP(email)
+    ]);
+
     if (!organization) {
       return res.status(404).json({ message: 'Invalid organization code' });
     }
@@ -126,7 +132,6 @@ exports.organizationVerifyOTP = async (req, res) => {
       return res.status(401).json({ message: 'Invalid email for this organization' });
     }
 
-    const otpData = await getOTP(email);
     if (!otpData) {
       return res.status(400).json({ message: 'OTP not found or expired' });
     }
@@ -136,7 +141,7 @@ exports.organizationVerifyOTP = async (req, res) => {
     }
 
     if (otpData.expiresAt.toDate() < new Date()) {
-      await deleteOTP(email);
+      deleteOTP(email);
       return res.status(400).json({ message: 'OTP expired' });
     }
 
@@ -144,7 +149,7 @@ exports.organizationVerifyOTP = async (req, res) => {
       return res.status(400).json({ message: 'Invalid OTP' });
     }
 
-    await deleteOTP(email);
+    deleteOTP(email);
 
     const token = generateToken({
       userId: organization.orgId,
@@ -153,7 +158,7 @@ exports.organizationVerifyOTP = async (req, res) => {
       orgCode: organization.orgCode
     });
 
-    await saveToken(organization.orgId, token, 'organization');
+    saveToken(organization.orgId, token, 'organization').catch(() => {});
 
     res.cookie('authToken', token, {
       httpOnly: true,
@@ -179,7 +184,6 @@ exports.organizationVerifyOTP = async (req, res) => {
   }
 };
 
-// Teacher Login with Password
 exports.teacherLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -210,7 +214,7 @@ exports.teacherLogin = async (req, res) => {
       orgCode: teacher.orgCode
     });
 
-    await saveToken(teacher.teacherId, token, 'teacher');
+    saveToken(teacher.teacherId, token, 'teacher').catch(() => {});
 
     res.cookie('authToken', token, {
       httpOnly: true,
@@ -238,7 +242,6 @@ exports.teacherLogin = async (req, res) => {
   }
 };
 
-// Teacher Login with OTP - Step 1: Request OTP
 exports.teacherRequestOTP = async (req, res) => {
   try {
     const { email } = req.body;
@@ -257,10 +260,15 @@ exports.teacherRequestOTP = async (req, res) => {
     }
 
     const otp = generateOTP();
-    await saveOTP(email, otp, 'teacher');
-
-    const emailContent = emailTemplates.loginOTP(teacher.name, otp);
-    await sendEmail(email, emailContent.subject, emailContent.html);
+    
+    await Promise.all([
+      saveOTP(email, otp, 'teacher'),
+      sendEmail(
+        email,
+        emailTemplates.loginOTP(teacher.name, otp).subject,
+        emailTemplates.loginOTP(teacher.name, otp).html
+      ).catch(() => {})
+    ]);
 
     res.status(200).json({ message: 'OTP sent to your email' });
   } catch (error) {
@@ -269,7 +277,6 @@ exports.teacherRequestOTP = async (req, res) => {
   }
 };
 
-// Teacher Login with OTP - Step 2: Verify OTP
 exports.teacherVerifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -278,12 +285,15 @@ exports.teacherVerifyOTP = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    const teacher = await teacherModel.getTeacherByEmail(email);
+    const [teacher, otpData] = await Promise.all([
+      teacherModel.getTeacherByEmail(email),
+      getOTP(email)
+    ]);
+
     if (!teacher) {
       return res.status(404).json({ message: 'Teacher not found' });
     }
 
-    const otpData = await getOTP(email);
     if (!otpData) {
       return res.status(400).json({ message: 'OTP not found or expired' });
     }
@@ -293,7 +303,7 @@ exports.teacherVerifyOTP = async (req, res) => {
     }
 
     if (otpData.expiresAt.toDate() < new Date()) {
-      await deleteOTP(email);
+      deleteOTP(email);
       return res.status(400).json({ message: 'OTP expired' });
     }
 
@@ -301,7 +311,7 @@ exports.teacherVerifyOTP = async (req, res) => {
       return res.status(400).json({ message: 'Invalid OTP' });
     }
 
-    await deleteOTP(email);
+    deleteOTP(email);
 
     const token = generateToken({
       userId: teacher.teacherId,
@@ -311,7 +321,7 @@ exports.teacherVerifyOTP = async (req, res) => {
       orgCode: teacher.orgCode
     });
 
-    await saveToken(teacher.teacherId, token, 'teacher');
+    saveToken(teacher.teacherId, token, 'teacher').catch(() => {});
 
     res.cookie('authToken', token, {
       httpOnly: true,
@@ -339,7 +349,6 @@ exports.teacherVerifyOTP = async (req, res) => {
   }
 };
 
-// Student Login with Password
 exports.studentLogin = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -370,7 +379,7 @@ exports.studentLogin = async (req, res) => {
       orgCode: student.orgCode
     });
 
-    await saveToken(student.studentId, token, 'student');
+    saveToken(student.studentId, token, 'student').catch(() => {});
 
     res.cookie('authToken', token, {
       httpOnly: true,
@@ -398,7 +407,6 @@ exports.studentLogin = async (req, res) => {
   }
 };
 
-// Student Login with OTP - Step 1: Request OTP
 exports.studentRequestOTP = async (req, res) => {
   try {
     const { email } = req.body;
@@ -417,10 +425,15 @@ exports.studentRequestOTP = async (req, res) => {
     }
 
     const otp = generateOTP();
-    await saveOTP(email, otp, 'student');
-
-    const emailContent = emailTemplates.loginOTP(student.studentName, otp);
-    await sendEmail(email, emailContent.subject, emailContent.html);
+    
+    await Promise.all([
+      saveOTP(email, otp, 'student'),
+      sendEmail(
+        email,
+        emailTemplates.loginOTP(student.studentName, otp).subject,
+        emailTemplates.loginOTP(student.studentName, otp).html
+      ).catch(() => {})
+    ]);
 
     res.status(200).json({ message: 'OTP sent to your email' });
   } catch (error) {
@@ -429,7 +442,6 @@ exports.studentRequestOTP = async (req, res) => {
   }
 };
 
-// Student Login with OTP - Step 2: Verify OTP
 exports.studentVerifyOTP = async (req, res) => {
   try {
     const { email, otp } = req.body;
@@ -438,12 +450,15 @@ exports.studentVerifyOTP = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    const student = await studentModel.getStudentByEmail(email);
+    const [student, otpData] = await Promise.all([
+      studentModel.getStudentByEmail(email),
+      getOTP(email)
+    ]);
+
     if (!student) {
       return res.status(404).json({ message: 'Student not found' });
     }
 
-    const otpData = await getOTP(email);
     if (!otpData) {
       return res.status(400).json({ message: 'OTP not found or expired' });
     }
@@ -453,7 +468,7 @@ exports.studentVerifyOTP = async (req, res) => {
     }
 
     if (otpData.expiresAt.toDate() < new Date()) {
-      await deleteOTP(email);
+      deleteOTP(email);
       return res.status(400).json({ message: 'OTP expired' });
     }
 
@@ -461,7 +476,7 @@ exports.studentVerifyOTP = async (req, res) => {
       return res.status(400).json({ message: 'Invalid OTP' });
     }
 
-    await deleteOTP(email);
+    deleteOTP(email);
 
     const token = generateToken({
       userId: student.studentId,
@@ -471,7 +486,7 @@ exports.studentVerifyOTP = async (req, res) => {
       orgCode: student.orgCode
     });
 
-    await saveToken(student.studentId, token, 'student');
+    saveToken(student.studentId, token, 'student').catch(() => {});
 
     res.cookie('authToken', token, {
       httpOnly: true,
@@ -499,12 +514,11 @@ exports.studentVerifyOTP = async (req, res) => {
   }
 };
 
-// Logout
 exports.logout = async (req, res) => {
   try {
     const userId = req.user.userId;
     
-    await deleteToken(userId);
+    deleteToken(userId);
 
     res.clearCookie('authToken', {
       httpOnly: true,

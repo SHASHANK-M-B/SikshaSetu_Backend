@@ -41,8 +41,11 @@ exports.register = async (req, res) => {
       email
     });
 
-    const emailContent = emailTemplates.studentPendingApproval(studentName, organization.orgName);
-    await sendEmail(email, emailContent.subject, emailContent.html);
+    sendEmail(
+      email,
+      emailTemplates.studentPendingApproval(studentName, organization.orgName).subject,
+      emailTemplates.studentPendingApproval(studentName, organization.orgName).html
+    ).catch(() => {});
 
     res.status(201).json({
       message: 'Registration successful. Awaiting organization approval.',

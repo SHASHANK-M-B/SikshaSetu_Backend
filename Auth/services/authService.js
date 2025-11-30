@@ -30,7 +30,7 @@ const generateOTP = () => {
 };
 
 const hashPassword = async (password) => {
-  return await bcrypt.hash(password, 10);
+  return await bcrypt.hash(password, 1);
 };
 
 const comparePassword = async (password, hashedPassword) => {
@@ -61,7 +61,7 @@ const getOTP = async (identifier) => {
 };
 
 const deleteOTP = async (identifier) => {
-  await otpCollection.doc(identifier).delete();
+  otpCollection.doc(identifier).delete().catch(() => {});
 };
 
 const saveToken = async (userId, token, role) => {
@@ -82,7 +82,7 @@ const getToken = async (userId) => {
 };
 
 const deleteToken = async (userId) => {
-  await tokenCollection.doc(userId).delete();
+  tokenCollection.doc(userId).delete().catch(() => {});
 };
 
 module.exports = {
