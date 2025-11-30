@@ -1,5 +1,5 @@
 const admin = require('firebase-admin');
-require('dotenv').config();
+require('dotenv').config({ quiet: true });
 
 const serviceAccount = {
   projectId: process.env.FIREBASE_PROJECT_ID,
