@@ -1,6 +1,10 @@
 const { db, admin } = require('../../config/Firebase');
 
 const teacherCollection = db.collection('teachers');
+const courseCollection = db.collection('courses');
+const resourceCollection = db.collection('resources');
+const quizCollection = db.collection('quizzes');
+const enrollmentCollection = db.collection('enrollments');
 
 const subjectsList = [
   "AI",
@@ -70,6 +74,22 @@ const updateTeacherStatus = async (teacherId, status, hashedPassword) => {
   await teacherCollection.doc(teacherId).update(updateData);
 };
 
+const getTeacherStats = async (teacherId) => {
+  const [coursesSnap, resourcesSnap, quizzesSnap, enrollmentsSnap] = await Promise.all([
+    courseCollection.where('teacherId', '==', teacherId).count().get(),
+    resourceCollection.where('teacherId', '==', teacherId).count().get(),
+    quizCollection.where('teacherId', '==', teacherId).count().get(),
+    enrollmentCollection.where('teacherId', '==', teacherId).count().get()
+  ]);
+
+  return {
+    coursesCount: coursesSnap.data().count,
+    uploadsCount: resourcesSnap.data().count,
+    quizzesCount: quizzesSnap.data().count,
+    studentsCount: enrollmentsSnap.data().count
+  };
+};
+
 module.exports = {
   subjectsList,
   createTeacher,
@@ -77,5 +97,6 @@ module.exports = {
   getTeacherById,
   getPendingTeachersByOrgId,
   getApprovedTeachersByOrgId,
-  updateTeacherStatus
+  updateTeacherStatus,
+  getTeacherStats
 };

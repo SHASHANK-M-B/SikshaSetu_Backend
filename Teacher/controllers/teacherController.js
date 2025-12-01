@@ -70,3 +70,37 @@ exports.getSubjects = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch subjects' });
   }
 };
+
+exports.getDashboard = async (req, res) => {
+  try {
+    const teacherId = req.user.userId;
+
+    const teacher = await teacherModel.getTeacherById(teacherId);
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+
+    const organization = await organizationModel.getOrganizationById(teacher.orgId);
+    if (!organization) {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+
+    const stats = await teacherModel.getTeacherStats(teacherId);
+
+    res.status(200).json({
+      orgName: organization.orgName,
+      teacherName: teacher.name,
+      subject: teacher.subject === 'Others' ? teacher.customSubject : teacher.subject,
+      email: teacher.email,
+      quickStats: {
+        coursesCount: stats.coursesCount,
+        studentsCount: stats.studentsCount,
+        uploadsCount: stats.uploadsCount,
+        quizzesCount: stats.quizzesCount
+      }
+    });
+  } catch (error) {
+    console.error('Dashboard fetch error:', error);
+    res.status(500).json({ message: 'Failed to fetch dashboard' });
+  }
+};
