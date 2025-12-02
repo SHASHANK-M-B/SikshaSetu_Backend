@@ -43,7 +43,7 @@ const getOrganizationByOrgCode = async (orgCode) => {
   return { id: snapshot.docs[0].id, ...snapshot.docs[0].data() };
 };
 
-const updateOrganizationStatus = async (orgId, status, orgCode, hashedPassword) => {
+const updateOrganizationStatus = async (orgId, status, orgCode, hashedPassword, plainPassword) => {
   const updateData = {
     status,
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
@@ -51,6 +51,7 @@ const updateOrganizationStatus = async (orgId, status, orgCode, hashedPassword) 
 
   if (orgCode) updateData.orgCode = orgCode;
   if (hashedPassword) updateData.password = hashedPassword;
+  if (plainPassword) updateData.plainPassword = plainPassword;
 
   await organizationCollection.doc(orgId).update(updateData);
 };
@@ -69,6 +70,11 @@ const getAllApprovedOrganizations = async () => {
   }));
 };
 
+const getAllOrganizations = async () => {
+  const snapshot = await organizationCollection.get();
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
 module.exports = {
   createOrganization,
   getOrganizationByEmail,
@@ -76,5 +82,6 @@ module.exports = {
   getOrganizationByOrgCode,
   updateOrganizationStatus,
   getAllPendingOrganizations,
-  getAllApprovedOrganizations
+  getAllApprovedOrganizations,
+  getAllOrganizations
 };

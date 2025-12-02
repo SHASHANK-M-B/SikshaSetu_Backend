@@ -14,14 +14,23 @@ const transporter = nodemailer.createTransport({
 });
 
 const sendEmail = async (to, subject, html) => {
-  const mailOptions = {
-    from: process.env.EMAIL_FROM,
-    to,
-    subject,
-    html
-  };
+  try {
+    if (!process.env.EMAIL_USER || !process.env.EMAIL_APP_PASSWORD || !process.env.EMAIL_FROM) {
+      throw new Error('Email configuration missing in environment variables');
+    }
 
-  await transporter.sendMail(mailOptions);
+    const mailOptions = {
+      from: process.env.EMAIL_FROM,
+      to,
+      subject,
+      html
+    };
+
+    const info = await transporter.sendMail(mailOptions);
+    return { success: true, messageId: info.messageId };
+  } catch (error) {
+    throw error;
+  }
 };
 
 const emailTemplates = {

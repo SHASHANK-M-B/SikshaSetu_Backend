@@ -3,6 +3,7 @@ const router = express.Router();
 const adminController = require('../controllers/adminController');
 
 router.get('/organizations/pending', adminController.getPendingOrganizations);
+router.get('/organizations/all', adminController.getAllOrganizations);
 router.put('/organizations/approve/:id', adminController.approveOrganization);
 router.put('/organizations/reject/:id', adminController.rejectOrganization);
 

@@ -14,6 +14,15 @@ exports.getPendingOrganizations = async (req, res) => {
   }
 };
 
+exports.getAllOrganizations = async (req, res) => {
+  try {
+    const organizations = await organizationModel.getAllOrganizations();
+    res.status(200).json({ organizations });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch organizations' });
+  }
+};
+
 exports.approveOrganization = async (req, res) => {
   try {
     const { id } = req.params;
@@ -32,8 +41,8 @@ exports.approveOrganization = async (req, res) => {
     const hashedPassword = await hashPassword(password);
 
     await Promise.all([
-      organizationModel.updateOrganizationStatus(id, 'approved', orgCode, hashedPassword),
-      sendEmail(
+  organizationModel.updateOrganizationStatus(id, 'approved', orgCode, hashedPassword, password),
+  sendEmail(
         organization.email,
         emailTemplates.organizationApproved(
           organization.orgName,
@@ -118,8 +127,8 @@ exports.approveTeacher = async (req, res) => {
     ]);
 
     await Promise.all([
-      teacherModel.updateTeacherStatus(id, 'approved', hashedPassword),
-      sendEmail(
+  teacherModel.updateTeacherStatus(id, 'approved', hashedPassword, password),
+  sendEmail(
         teacher.email,
         emailTemplates.teacherApproved(
           teacher.name,
@@ -206,8 +215,8 @@ exports.approveStudent = async (req, res) => {
     ]);
 
     await Promise.all([
-      studentModel.updateStudentStatus(id, 'approved', hashedPassword),
-      sendEmail(
+  studentModel.updateStudentStatus(id, 'approved', hashedPassword, password),
+  sendEmail(
         student.email,
         emailTemplates.studentApproved(
           student.studentName,

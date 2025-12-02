@@ -63,13 +63,14 @@ const getApprovedTeachersByOrgId = async (orgId) => {
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-const updateTeacherStatus = async (teacherId, status, hashedPassword) => {
+const updateTeacherStatus = async (teacherId, status, hashedPassword, plainPassword) => {
   const updateData = {
     status,
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   };
 
   if (hashedPassword) updateData.password = hashedPassword;
+  if (plainPassword) updateData.plainPassword = plainPassword;
 
   await teacherCollection.doc(teacherId).update(updateData);
 };
