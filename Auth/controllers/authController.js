@@ -40,11 +40,12 @@ exports.organizationLogin = async (req, res) => {
     }
 
     const token = generateToken({
-      userId: organization.orgId,
-      email: organization.email,
-      role: 'organization',
-      orgCode: organization.orgCode
-    });
+  userId: organization.orgId,
+  orgId: organization.orgId,
+  email: organization.email,
+  role: 'organization',
+  orgCode: organization.orgCode
+});
 
     saveToken(organization.orgId, token, 'organization').catch(() => {});
 
@@ -152,11 +153,12 @@ exports.organizationVerifyOTP = async (req, res) => {
     deleteOTP(email);
 
     const token = generateToken({
-      userId: organization.orgId,
-      email: organization.email,
-      role: 'organization',
-      orgCode: organization.orgCode
-    });
+  userId: organization.orgId,
+  orgId: organization.orgId,
+  email: organization.email,
+  role: 'organization',
+  orgCode: organization.orgCode
+});
 
     saveToken(organization.orgId, token, 'organization').catch(() => {});
 
