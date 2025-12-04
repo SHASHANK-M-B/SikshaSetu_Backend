@@ -2,6 +2,8 @@ require('dotenv').config({ quiet: true });
 const express = require('express');
 const cors = require('cors');
 const cookieParser = require('cookie-parser');
+const http = require('http');
+const { initializeSocket } = require('./socket');
 
 const authRoutes = require('./Auth/routes/authRoutes');
 const organizationRoutes = require('./Organization/routes/organizationRoutes');
@@ -10,6 +12,9 @@ const studentRoutes = require('./Student/routes/studentRoutes');
 const adminRoutes = require('./Admin/routes/adminRoutes');
 
 const app = express();
+const server = http.createServer(app);
+
+initializeSocket(server);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -32,6 +37,7 @@ app.get('/', (req, res) => {
 
 const PORT = process.env.PORT || 8928;
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
+  console.log(`Socket.IO server running on ws://localhost:${PORT}`);
 });

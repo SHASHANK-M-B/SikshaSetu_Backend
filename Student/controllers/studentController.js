@@ -65,3 +65,34 @@ exports.getSubjects = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch subjects' });
   }
 };
+
+exports.getDashboard = async (req, res) => {
+  try {
+    const studentId = req.user.userId;
+
+    const student = await studentModel.getStudentById(studentId);
+    if (!student) {
+      return res.status(404).json({ message: 'Student not found' });
+    }
+
+    const organization = await organizationModel.getOrganizationById(student.orgId);
+    if (!organization) {
+      return res.status(404).json({ message: 'Organization not found' });
+    }
+
+    res.status(200).json({
+      orgName: organization.orgName,
+      studentName: student.studentName,
+      subject: student.subject,
+      email: student.email,
+      quickStats: {
+        enrolledCourses: 0,
+        completedQuizzes: 0,
+        activeSessions: 0
+      }
+    });
+  } catch (error) {
+    console.error('Dashboard fetch error:', error);
+    res.status(500).json({ message: 'Failed to fetch dashboard' });
+  }
+};
