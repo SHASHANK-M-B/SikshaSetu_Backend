@@ -4,6 +4,10 @@ const studentController = require('../controllers/studentController');
 const liveSessionController = require('../controllers/liveSessionController');
 const quizController = require('../controllers/quizController');
 const discussionController = require('../controllers/discussionController');
+const courseController = require('../controllers/courseController');
+const recordedController = require('../controllers/recordedController');
+const resourceController = require('../controllers/resourceController');
+const analyticsController = require('../controllers/analyticsController');
 const uploadMiddleware = require('../../Teacher/middlewares/uploadMiddleware');
 const { authenticate, authorizeRoles } = require('../../Auth/middlewares/authMiddleware');
 
@@ -29,5 +33,20 @@ router.get('/discussions/all', authenticate, authorizeRoles('student'), discussi
 router.get('/discussions/:id', authenticate, authorizeRoles('student'), discussionController.getDiscussionThread);
 router.post('/discussions/:id/reply', authenticate, authorizeRoles('student'), uploadMiddleware.multiple('files', 5), discussionController.replyToDiscussion);
 router.put('/discussions/:id/resolve', authenticate, authorizeRoles('student'), discussionController.markResolved);
+
+router.get('/courses', authenticate, authorizeRoles('student'), courseController.getAllCourses);
+router.get('/course/:id', authenticate, authorizeRoles('student'), courseController.getCourseDetails);
+router.post('/course/:id/enroll', authenticate, authorizeRoles('student'), courseController.enrollInCourse);
+
+router.get('/recorded-sessions', authenticate, authorizeRoles('student'), recordedController.getRecordedSessions);
+router.get('/recorded/:id', authenticate, authorizeRoles('student'), recordedController.getRecordingDetails);
+router.get('/recorded/:id/download', authenticate, authorizeRoles('student'), recordedController.downloadRecording);
+
+router.get('/resources', authenticate, authorizeRoles('student'), resourceController.getResources);
+router.get('/resource/:id', authenticate, authorizeRoles('student'), resourceController.getResourceDetails);
+router.get('/resource/:id/download', authenticate, authorizeRoles('student'), resourceController.downloadResource);
+router.get('/resource-categories', authenticate, authorizeRoles('student'), resourceController.getResourceCategories);
+
+router.get('/analytics', authenticate, authorizeRoles('student'), analyticsController.getAnalytics);
 
 module.exports = router;
