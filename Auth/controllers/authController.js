@@ -15,19 +15,15 @@ const { sendEmail, emailTemplates } = require('../../utils/emailService');
 
 exports.organizationLogin = async (req, res) => {
   try {
-    const { orgCode, email, password } = req.body;
+    const { email, password } = req.body;
 
-    if (!orgCode || !email || !password) {
+    if (!email || !password) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
-    const organization = await organizationModel.getOrganizationByOrgCode(orgCode);
+    const organization = await organizationModel.getOrganizationByEmail(email);
     if (!organization) {
-      return res.status(404).json({ message: 'Invalid organization code' });
-    }
-
-    if (organization.email !== email) {
-      return res.status(401).json({ message: 'Invalid credentials' });
+      return res.status(404).json({ message: 'Invalid credentials' });
     }
 
     if (organization.status !== 'approved') {
@@ -40,12 +36,12 @@ exports.organizationLogin = async (req, res) => {
     }
 
     const token = generateToken({
-  userId: organization.orgId,
-  orgId: organization.orgId,
-  email: organization.email,
-  role: 'organization',
-  orgCode: organization.orgCode
-});
+      userId: organization.orgId,
+      orgId: organization.orgId,
+      email: organization.email,
+      role: 'organization',
+      orgCode: organization.orgCode
+    });
 
     saveToken(organization.orgId, token, 'organization').catch(() => {});
 
@@ -75,19 +71,15 @@ exports.organizationLogin = async (req, res) => {
 
 exports.organizationRequestOTP = async (req, res) => {
   try {
-    const { orgCode, email } = req.body;
+    const { email } = req.body;
 
-    if (!orgCode || !email) {
-      return res.status(400).json({ message: 'Organization code and email are required' });
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
     }
 
-    const organization = await organizationModel.getOrganizationByOrgCode(orgCode);
+    const organization = await organizationModel.getOrganizationByEmail(email);
     if (!organization) {
-      return res.status(404).json({ message: 'Invalid organization code' });
-    }
-
-    if (organization.email !== email) {
-      return res.status(401).json({ message: 'Invalid email for this organization' });
+      return res.status(404).json({ message: 'Invalid email' });
     }
 
     if (organization.status !== 'approved') {
@@ -114,23 +106,19 @@ exports.organizationRequestOTP = async (req, res) => {
 
 exports.organizationVerifyOTP = async (req, res) => {
   try {
-    const { orgCode, email, otp } = req.body;
+    const { email, otp } = req.body;
 
-    if (!orgCode || !email || !otp) {
+    if (!email || !otp) {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
     const [organization, otpData] = await Promise.all([
-      organizationModel.getOrganizationByOrgCode(orgCode),
+      organizationModel.getOrganizationByEmail(email),
       getOTP(email)
     ]);
 
     if (!organization) {
-      return res.status(404).json({ message: 'Invalid organization code' });
-    }
-
-    if (organization.email !== email) {
-      return res.status(401).json({ message: 'Invalid email for this organization' });
+      return res.status(404).json({ message: 'Invalid email' });
     }
 
     if (!otpData) {
@@ -153,12 +141,12 @@ exports.organizationVerifyOTP = async (req, res) => {
     deleteOTP(email);
 
     const token = generateToken({
-  userId: organization.orgId,
-  orgId: organization.orgId,
-  email: organization.email,
-  role: 'organization',
-  orgCode: organization.orgCode
-});
+      userId: organization.orgId,
+      orgId: organization.orgId,
+      email: organization.email,
+      role: 'organization',
+      orgCode: organization.orgCode
+    });
 
     saveToken(organization.orgId, token, 'organization').catch(() => {});
 
