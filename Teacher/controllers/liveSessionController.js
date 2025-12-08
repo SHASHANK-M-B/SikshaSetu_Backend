@@ -219,3 +219,42 @@ exports.getUnderstoodCount = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch understood count' });
   }
 };
+exports.changeSlide = async (req, res) => {
+  try {
+    const teacherId = req.user.userId;
+    const { id } = req.params;
+    const { slideIndex } = req.body;
+
+    if (slideIndex === undefined || slideIndex === null) {
+      return res.status(400).json({ message: 'Slide index is required' });
+    }
+
+    const session = await liveSessionModel.getLiveSessionById(id);
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    if (session.teacherId !== teacherId) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    if (!session.isActive) {
+      return res.status(400).json({ message: 'Session not active' });
+    }
+
+    await liveSessionModel.updateLiveSession(id, {
+      currentSlideIndex: slideIndex
+    });
+
+    const { getIO } = require('../../socket');
+    const io = getIO();
+    io.of('/live-session').to(id).emit('slide-changed', {
+      slideIndex
+    });
+
+    res.status(200).json({ message: 'Slide changed successfully' });
+  } catch (error) {
+    console.error('Change slide error:', error);
+    res.status(500).json({ message: 'Failed to change slide' });
+  }
+};

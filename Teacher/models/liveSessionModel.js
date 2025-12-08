@@ -21,6 +21,8 @@ const createLiveSession = async (sessionData) => {
     participants: [],
     understoodCount: 0,
     materials: [],
+    currentSlideIndex: 0,
+    slides: [],
     createdAt: admin.firestore.FieldValue.serverTimestamp(),
     updatedAt: admin.firestore.FieldValue.serverTimestamp()
   };
