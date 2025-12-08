@@ -1,25 +1,32 @@
-# Use the standard Node.js 18 image (includes build tools for bcrypt/sharp)
-FROM node:18
+# Base Image: Node 20 on Debian Slim
+FROM node:20-slim
 
-# Install FFmpeg (Critical for your 'fluent-ffmpeg' compression)
-RUN apt-get update && apt-get install -y ffmpeg
+# System Dependencies
+# Installs FFmpeg (for video) and build tools (for Sharp/Redis)
+RUN apt-get update && apt-get install -y \
+    ffmpeg \
+    python3 \
+    make \
+    g++ \
+    && rm -rf /var/lib/apt/lists/*
 
-# Create app directory
-WORKDIR /usr/src/app
+# Directory inside container
+WORKDIR /app
 
-# Install app dependencies
-# A wildcard is used to ensure both package.json AND package-lock.json are copied
+# Copy package definitions first (Caching layer)
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+# --only=production skips devDependencies to save space
+RUN npm ci --only=production
 
-# Copy the rest of the application code
+# Copy application code
+# .dockerignore ensures node_modules is NOT copied here
 COPY . .
 
-# Cloud Run defaults to port 8080, but your app uses process.env.PORT
-# This line is for documentation purposes
-EXPOSE 8080
+# Default Port (Cloud Run overrides this, but good practice)
+ENV PORT=8080
+ENV NODE_ENV=production
 
-# Start the server
-CMD [ "node", "server.js" ]
+# Start Command
+CMD ["node", "server.js"]
