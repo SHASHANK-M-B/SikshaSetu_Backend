@@ -12,6 +12,11 @@ exports.scheduleLiveSession = async (req, res) => {
       return res.status(400).json({ message: 'All fields are required' });
     }
 
+    const teacher = await require('../models/teacherModel').getTeacherById(teacherId);
+    if (!teacher) {
+      return res.status(404).json({ message: 'Teacher not found' });
+    }
+
     if (courseId) {
       const course = await courseModel.getCourseById(courseId);
       if (!course || course.teacherId !== teacherId) {
@@ -26,6 +31,7 @@ exports.scheduleLiveSession = async (req, res) => {
 
     const session = await liveSessionModel.createLiveSession({
       teacherId,
+      orgId: teacher.orgId,
       sessionTitle,
       shortDescription,
       courseId,

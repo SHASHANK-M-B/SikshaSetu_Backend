@@ -76,18 +76,23 @@ const updateTeacherStatus = async (teacherId, status, hashedPassword, plainPassw
 };
 
 const getTeacherStats = async (teacherId) => {
-  const [coursesSnap, resourcesSnap, quizzesSnap, enrollmentsSnap] = await Promise.all([
+  const teacher = await getTeacherById(teacherId);
+  if (!teacher) return null;
+
+  const studentCollection = db.collection('students');
+  
+  const [coursesSnap, resourcesSnap, quizzesSnap, studentsSnap] = await Promise.all([
     courseCollection.where('teacherId', '==', teacherId).count().get(),
     resourceCollection.where('teacherId', '==', teacherId).count().get(),
     quizCollection.where('teacherId', '==', teacherId).count().get(),
-    enrollmentCollection.where('teacherId', '==', teacherId).count().get()
+    studentCollection.where('orgId', '==', teacher.orgId).where('status', '==', 'approved').count().get()
   ]);
 
   return {
     coursesCount: coursesSnap.data().count,
     uploadsCount: resourcesSnap.data().count,
     quizzesCount: quizzesSnap.data().count,
-    studentsCount: enrollmentsSnap.data().count
+    studentsCount: studentsSnap.data().count
   };
 };
 

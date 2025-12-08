@@ -11,17 +11,17 @@ const discussionController = require('../controllers/discussionController');
 const aiController = require('../controllers/aiController');
 const analyticsController = require('../controllers/analyticsController');
 const uploadMiddleware = require('../middlewares/uploadMiddleware');
-const { authenticate, authorizeRoles } = require('../../Auth/middlewares/authMiddleware');
+const { authenticate, authorizeRoles, authorizeSharedRoles } = require('../../Auth/middlewares/authMiddleware');
 
 router.post('/register', teacherController.register);
 router.get('/subjects', teacherController.getSubjects);
 router.get('/dashboard', authenticate, authorizeRoles('teacher'), teacherController.getDashboard);
 
 router.post('/course', authenticate, authorizeRoles('teacher'), courseController.createCourse);
-router.get('/course/:id', authenticate, authorizeRoles('teacher'), courseController.getCourse);
+router.get('/course/:id', authenticate, authorizeSharedRoles('teacher', 'student'), courseController.getCourse);
 router.put('/course/:id', authenticate, authorizeRoles('teacher'), courseController.updateCourse);
 router.delete('/course/:id', authenticate, authorizeRoles('teacher'), courseController.deleteCourse);
-router.get('/courses', authenticate, authorizeRoles('teacher'), courseController.getCourses);
+router.get('/courses', authenticate, authorizeSharedRoles('teacher', 'student'), courseController.getCourses);
 
 router.post('/resource', authenticate, authorizeRoles('teacher'), uploadMiddleware.single('file'), resourceController.uploadResource);
 router.get('/resource/:id', authenticate, authorizeRoles('teacher'), resourceController.getResource);

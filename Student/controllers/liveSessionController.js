@@ -13,8 +13,10 @@ exports.getAvailableSessions = async (req, res) => {
     const { db } = require('../../config/Firebase');
     const now = new Date();
     
-    const sessionsSnapshot = await db.collection('liveSessions')
-      .where('isActive', '==', true)
+    const sessionsSnapshot = await db
+      .collection("liveSessions")
+      .where("orgId", "==", student.orgId)
+      .where("isActive", "==", true)
       .get();
 
     const sessions = sessionsSnapshot.docs.map(doc => ({
@@ -59,8 +61,10 @@ exports.getAllSessions = async (req, res) => {
 
     const { db } = require('../../config/Firebase');
     
-    const sessionsSnapshot = await db.collection('liveSessions')
-      .orderBy('createdAt', 'desc')
+    const sessionsSnapshot = await db
+      .collection("liveSessions")
+      .where("orgId", "==", student.orgId)
+      .orderBy("createdAt", "desc")
       .limit(50)
       .get();
 

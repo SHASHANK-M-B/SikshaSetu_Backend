@@ -41,9 +41,17 @@ exports.createCourse = async (req, res) => {
 
 exports.getCourses = async (req, res) => {
   try {
-    const teacherId = req.user.userId;
+    const userId = req.user.userId;
+    const userRole = req.user.role;
 
-    const courses = await courseModel.getCoursesByTeacherId(teacherId);
+    let courses;
+    if (userRole === 'teacher') {
+      courses = await courseModel.getCoursesByTeacherId(userId);
+    } else if (userRole === 'student') {
+      courses = await courseModel.getCoursesByOrgId(req.user.orgId);
+    } else {
+      return res.status(403).json({ message: 'Access denied' });
+    }
 
     res.status(200).json({ courses });
   } catch (error) {
@@ -54,7 +62,8 @@ exports.getCourses = async (req, res) => {
 
 exports.getCourse = async (req, res) => {
   try {
-    const teacherId = req.user.userId;
+    const userId = req.user.userId;
+    const userRole = req.user.role;
     const { id } = req.params;
 
     const course = await courseModel.getCourseById(id);
@@ -62,7 +71,11 @@ exports.getCourse = async (req, res) => {
       return res.status(404).json({ message: 'Course not found' });
     }
 
-    if (course.teacherId !== teacherId) {
+    if (userRole === 'teacher' && course.teacherId !== userId) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+
+    if (userRole === 'student' && course.orgId !== req.user.orgId) {
       return res.status(403).json({ message: 'Access denied' });
     }
 

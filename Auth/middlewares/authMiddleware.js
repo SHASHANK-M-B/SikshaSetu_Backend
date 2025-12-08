@@ -40,3 +40,15 @@ exports.authorizeRoles = (...roles) => {
     next();
   };
 };
+
+exports.authorizeSharedRoles = (...allowedRolePairs) => {
+  return (req, res, next) => {
+    const userRole = req.user.role;
+    const flatRoles = allowedRolePairs.flat();
+    
+    if (!flatRoles.includes(userRole)) {
+      return res.status(403).json({ message: 'Access denied' });
+    }
+    next();
+  };
+};

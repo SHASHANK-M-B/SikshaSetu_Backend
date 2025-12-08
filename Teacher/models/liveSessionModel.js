@@ -9,6 +9,7 @@ const createLiveSession = async (sessionData) => {
   const session = {
     sessionId,
     teacherId: sessionData.teacherId,
+    orgId: sessionData.orgId,
     sessionTitle: sessionData.sessionTitle,
     shortDescription: sessionData.shortDescription,
     courseId: sessionData.courseId || null,

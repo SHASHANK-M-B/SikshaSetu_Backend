@@ -29,6 +29,14 @@ const getCoursesByTeacherId = async (teacherId) => {
   return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
+const getCoursesByOrgId = async (orgId) => {
+  const snapshot = await courseCollection
+    .where('orgId', '==', orgId)
+    .orderBy('createdAt', 'desc')
+    .get();
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
 const getCourseById = async (courseId) => {
   const doc = await courseCollection.doc(courseId).get();
   if (!doc.exists) return null;
@@ -60,6 +68,7 @@ const getCourseByCode = async (teacherId, courseCode) => {
 module.exports = {
   createCourse,
   getCoursesByTeacherId,
+  getCoursesByOrgId,
   getCourseById,
   updateCourse,
   deleteCourse,
