@@ -156,14 +156,17 @@ const initializeSocket = (server) => {
     // WebRTC signaling - Offer (with Opus optimization)
     socket.on('webrtc-offer', ({ sessionId, offer, targetSocketId }) => {
       try {
-        // Optimize SDP for Opus 16kbps
-        const optimizedOffer = {
-          type: offer.type,
-          sdp: optimizeSDPForOpus(offer.sdp)
-        };
+        // --- FIX: Send original offer (Disable optimization) ---
+        const optimizedOffer = offer; 
+        
+        // Comment out the optimization line for now:
+        // const optimizedOffer = {
+        //   type: offer.type,
+        //   sdp: optimizeSDPForOpus(offer.sdp)
+        // };
 
         socket.to(targetSocketId).emit('webrtc-offer', {
-          offer: optimizedOffer,
+          offer: optimizedOffer, // Sending raw offer
           fromSocketId: socket.id
         });
 
@@ -177,14 +180,17 @@ const initializeSocket = (server) => {
     // WebRTC signaling - Answer (with Opus optimization)
     socket.on('webrtc-answer', ({ sessionId, answer, targetSocketId }) => {
       try {
-        // Optimize SDP for Opus 16kbps
-        const optimizedAnswer = {
-          type: answer.type,
-          sdp: optimizeSDPForOpus(answer.sdp)
-        };
+        // --- FIX: Send original answer (Disable optimization) ---
+        const optimizedAnswer = answer;
+
+        // Comment out the optimization line for now:
+        // const optimizedAnswer = {
+        //   type: answer.type,
+        //   sdp: optimizeSDPForOpus(answer.sdp)
+        // };
 
         socket.to(targetSocketId).emit('webrtc-answer', {
-          answer: optimizedAnswer,
+          answer: optimizedAnswer, // Sending raw answer
           fromSocketId: socket.id
         });
 
