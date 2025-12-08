@@ -297,3 +297,19 @@ exports.uploadSlides = async (req, res) => {
     res.status(500).json({ message: 'Failed to upload slides' });
   }
 };
+
+exports.debugAudio = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const session = await liveSessionModel.getLiveSessionById(id);
+    
+    res.status(200).json({
+      sessionId: id,
+      isActive: session?.isActive,
+      participants: session?.participants?.length || 0,
+      message: 'Check browser console for WebRTC logs'
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+};
