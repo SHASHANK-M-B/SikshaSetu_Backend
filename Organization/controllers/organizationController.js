@@ -90,6 +90,7 @@ exports.getDashboard = async (req, res) => {
 
     res.status(200).json({
       orgName: organization.orgName,
+      orgId: organization.orgId,
       totalTeachers: teachers.length,
       totalStudents: students.length,
       activeCourses: 0
