@@ -67,7 +67,11 @@ exports.getResources = async (req, res) => {
           courseId: resource.courseId,
           course: courseInfo,
           fileSize: resource.fileSize,
-          createdAt: resource.createdAt
+          createdAt: resource.createdAt,
+          downloadUrl: resource.fileUrl,
+      filename: resource.filename,
+      fileSize: resource.fileSize,
+      mimetype: resource.mimetype
         };
       })
     );
