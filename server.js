@@ -35,9 +35,10 @@ app.get('/', (req, res) => {
   res.send('SikshaSetu Backend');
 });
 
-const PORT = process.env.PORT || 8928;
+const PORT = parseInt(process.env.PORT) || 8080;
+const HOST = '0.0.0.0';
 
-server.listen(PORT, () => {
+server.listen(PORT, HOST, () => {
   console.log(`Server running on port ${PORT}`);
   console.log(`Socket.IO server running on ws://localhost:${PORT}`);
   console.log(`Audio streaming optimized for Opus 16kbps with FEC`);
