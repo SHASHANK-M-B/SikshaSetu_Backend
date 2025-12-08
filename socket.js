@@ -104,28 +104,31 @@ const initializeSocket = (server) => {
     });
 
     // Slide synchronization - change slide
-    socket.on('change-slide', async ({ sessionId, slideIndex }) => {
+    socket.on("change-slide", async ({ sessionId, slideIndex, slideImage }) => {
       try {
-        if (socket.role !== 'teacher') {
-          socket.emit('error', { message: 'Only teacher can change slides' });
+        if (socket.role !== "teacher") {
+          socket.emit("error", { message: "Only teacher can change slides" });
           return;
         }
 
-        const sessionRef = db.collection('liveSessions').doc(sessionId);
+        const sessionRef = db.collection("liveSessions").doc(sessionId);
         await sessionRef.update({
           currentSlideIndex: slideIndex,
-          updatedAt: admin.firestore.FieldValue.serverTimestamp()
+          updatedAt: admin.firestore.FieldValue.serverTimestamp(),
         });
 
-        liveSessionNamespace.to(sessionId).emit('slide-changed', {
+        liveSessionNamespace.to(sessionId).emit("slide-changed", {
           slideIndex,
-          changedBy: socket.userName
+          slideImage,
+          changedBy: socket.userName,
         });
 
-        console.log(`Teacher changed to slide ${slideIndex} in session ${sessionId}`);
+        console.log(
+          `Teacher changed to slide ${slideIndex} in session ${sessionId}`
+        );
       } catch (error) {
-        console.error('Change slide error:', error);
-        socket.emit('error', { message: 'Failed to change slide' });
+        console.error("Change slide error:", error);
+        socket.emit("error", { message: "Failed to change slide" });
       }
     });
 

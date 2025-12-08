@@ -225,6 +225,7 @@ exports.getUnderstoodCount = async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch understood count' });
   }
 };
+
 exports.changeSlide = async (req, res) => {
   try {
     const teacherId = req.user.userId;
@@ -262,5 +263,37 @@ exports.changeSlide = async (req, res) => {
   } catch (error) {
     console.error('Change slide error:', error);
     res.status(500).json({ message: 'Failed to change slide' });
+  }
+};
+
+exports.uploadSlides = async (req, res) => {
+  try {
+    const teacherId = req.user.userId;
+    const { id } = req.params;
+    const { slides } = req.body;
+
+    if (!slides || !Array.isArray(slides)) {
+      return res.status(400).json({ message: 'Slides array required' });
+    }
+
+    const session = await liveSessionModel.getLiveSessionById(id);
+    if (!session) {
+      return res.status(404).json({ message: 'Session not found' });
+    }
+
+    if (session.teacherId !== teacherId) {
+      return res.status(403).json({ message: 'Unauthorized' });
+    }
+
+    await liveSessionModel.updateSlides(id, slides);
+
+    const { getIO } = require('../../socket');
+    const io = getIO();
+    io.of('/live-session').to(id).emit('slides-updated', { slides });
+
+    res.status(200).json({ message: 'Slides uploaded successfully' });
+  } catch (error) {
+    console.error('Upload slides error:', error);
+    res.status(500).json({ message: 'Failed to upload slides' });
   }
 };

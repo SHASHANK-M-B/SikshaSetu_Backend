@@ -76,6 +76,13 @@ const addMaterial = async (sessionId, material) => {
   });
 };
 
+const updateSlides = async (sessionId, slides) => {
+  await liveSessionCollection.doc(sessionId).update({
+    slides: slides,
+    updatedAt: admin.firestore.FieldValue.serverTimestamp()
+  });
+};
+
 const addParticipant = async (sessionId, participantId) => {
   await liveSessionCollection.doc(sessionId).update({
     participants: admin.firestore.FieldValue.arrayUnion(participantId),
@@ -104,5 +111,6 @@ module.exports = {
   addMaterial,
   addParticipant,
   incrementUnderstoodCount,
-  deleteLiveSession
+  deleteLiveSession,
+  updateSlides
 };
