@@ -58,22 +58,22 @@ const initializeSocket = (server) => {
   const liveSessionNamespace = io.of('/live-session');
 
   liveSessionNamespace.on('connection', (socket) => {
-    console.log('Client connected:', socket.id);
+    console.log("Client connected:", socket.id);
 
     // Join session
-    socket.on('join-session', async ({ sessionId, userId, userName, role }) => {
+    socket.on("join-session", async ({ sessionId, userId, userName, role }) => {
       try {
-        const sessionRef = db.collection('liveSessions').doc(sessionId);
+        const sessionRef = db.collection("liveSessions").doc(sessionId);
         const sessionDoc = await sessionRef.get();
 
         if (!sessionDoc.exists) {
-          socket.emit('error', { message: 'Session not found' });
+          socket.emit("error", { message: "Session not found" });
           return;
         }
 
         const session = sessionDoc.data();
         if (!session.isActive) {
-          socket.emit('error', { message: 'Session not active' });
+          socket.emit("error", { message: "Session not active" });
           return;
         }
 
@@ -83,23 +83,25 @@ const initializeSocket = (server) => {
         socket.userName = userName;
         socket.role = role;
 
-        if (role === 'student') {
+        if (role === "student") {
           await sessionRef.update({
-            participants: admin.firestore.FieldValue.arrayUnion(userId)
+            participants: admin.firestore.FieldValue.arrayUnion(userId),
           });
         }
 
-        liveSessionNamespace.to(sessionId).emit('user-joined', {
+        liveSessionNamespace.to(sessionId).emit("user-joined", {
           userId,
           userName,
           role,
-          participantCount: session.participants ? session.participants.length + 1 : 1
+          participantCount: session.participants
+            ? session.participants.length + 1
+            : 1,
         });
 
         console.log(`${userName} (${role}) joined session ${sessionId}`);
       } catch (error) {
-        console.error('Join session error:', error);
-        socket.emit('error', { message: 'Failed to join session' });
+        console.error("Join session error:", error);
+        socket.emit("error", { message: "Failed to join session" });
       }
     });
 
@@ -133,52 +135,52 @@ const initializeSocket = (server) => {
     });
 
     // Slide synchronization - upload new slide
-    socket.on('slide-uploaded', async ({ sessionId, slideUrl, slideIndex }) => {
+    socket.on("slide-uploaded", async ({ sessionId, slideUrl, slideIndex }) => {
       try {
-        if (socket.role !== 'teacher') {
-          socket.emit('error', { message: 'Only teacher can upload slides' });
+        if (socket.role !== "teacher") {
+          socket.emit("error", { message: "Only teacher can upload slides" });
           return;
         }
 
-        liveSessionNamespace.to(sessionId).emit('new-slide-available', {
+        liveSessionNamespace.to(sessionId).emit("new-slide-available", {
           slideUrl,
           slideIndex,
           uploadedBy: socket.userName,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
 
         console.log(`New slide uploaded to session ${sessionId}`);
       } catch (error) {
-        console.error('Slide upload notification error:', error);
+        console.error("Slide upload notification error:", error);
       }
     });
 
     // WebRTC signaling - Offer (with Opus optimization)
-    socket.on('webrtc-offer', ({ sessionId, offer, targetSocketId }) => {
+    socket.on("webrtc-offer", ({ sessionId, offer, targetSocketId }) => {
       try {
         // --- FIX: Send original offer (Disable optimization) ---
-        const optimizedOffer = offer; 
-        
+        const optimizedOffer = offer;
+
         // Comment out the optimization line for now:
         // const optimizedOffer = {
         //   type: offer.type,
         //   sdp: optimizeSDPForOpus(offer.sdp)
         // };
 
-        socket.to(targetSocketId).emit('webrtc-offer', {
+        socket.to(targetSocketId).emit("webrtc-offer", {
           offer: optimizedOffer, // Sending raw offer
-          fromSocketId: socket.id
+          fromSocketId: socket.id,
         });
 
         console.log(`WebRTC offer sent from ${socket.id} to ${targetSocketId}`);
       } catch (error) {
-        console.error('WebRTC offer error:', error);
-        socket.emit('error', { message: 'Failed to process offer' });
+        console.error("WebRTC offer error:", error);
+        socket.emit("error", { message: "Failed to process offer" });
       }
     });
 
     // WebRTC signaling - Answer (with Opus optimization)
-    socket.on('webrtc-answer', ({ sessionId, answer, targetSocketId }) => {
+    socket.on("webrtc-answer", ({ sessionId, answer, targetSocketId }) => {
       try {
         // --- FIX: Send original answer (Disable optimization) ---
         const optimizedAnswer = answer;
@@ -189,42 +191,48 @@ const initializeSocket = (server) => {
         //   sdp: optimizeSDPForOpus(answer.sdp)
         // };
 
-        socket.to(targetSocketId).emit('webrtc-answer', {
+        socket.to(targetSocketId).emit("webrtc-answer", {
           answer: optimizedAnswer, // Sending raw answer
-          fromSocketId: socket.id
+          fromSocketId: socket.id,
         });
 
-        console.log(`WebRTC answer sent from ${socket.id} to ${targetSocketId}`);
+        console.log(
+          `WebRTC answer sent from ${socket.id} to ${targetSocketId}`
+        );
       } catch (error) {
-        console.error('WebRTC answer error:', error);
-        socket.emit('error', { message: 'Failed to process answer' });
+        console.error("WebRTC answer error:", error);
+        socket.emit("error", { message: "Failed to process answer" });
       }
     });
 
     // WebRTC signaling - ICE candidate
-    socket.on('webrtc-ice-candidate', ({ sessionId, candidate, targetSocketId }) => {
-      socket.to(targetSocketId).emit('webrtc-ice-candidate', {
-        candidate,
-        fromSocketId: socket.id
-      });
-    });
+    socket.on(
+      "webrtc-ice-candidate",
+      ({ sessionId, candidate, targetSocketId }) => {
+        socket.to(targetSocketId).emit("webrtc-ice-candidate", {
+          candidate,
+          fromSocketId: socket.id,
+        });
+      }
+    );
 
     // Request teacher's audio stream
-    socket.on('request-teacher-stream', ({ sessionId }) => {
-      const teacherSockets = Array.from(liveSessionNamespace.sockets.values())
-        .filter(s => s.sessionId === sessionId && s.role === 'teacher');
+    socket.on("request-teacher-stream", ({ sessionId }) => {
+      const teacherSockets = Array.from(
+        liveSessionNamespace.sockets.values()
+      ).filter((s) => s.sessionId === sessionId && s.role === "teacher");
 
       if (teacherSockets.length > 0) {
-        teacherSockets[0].emit('student-requesting-stream', {
-          studentSocketId: socket.id
+        teacherSockets[0].emit("student-requesting-stream", {
+          studentSocketId: socket.id,
         });
       } else {
-        socket.emit('error', { message: 'Teacher not available' });
+        socket.emit("error", { message: "Teacher not available" });
       }
     });
 
     // Chat messaging
-    socket.on('send-chat-message', async ({ sessionId, message }) => {
+    socket.on("send-chat-message", async ({ sessionId, message }) => {
       try {
         const chatMessage = {
           messageId: Date.now().toString(),
@@ -232,98 +240,122 @@ const initializeSocket = (server) => {
           userName: socket.userName,
           role: socket.role,
           message,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         };
 
         const realtimeDb = admin.database();
-        await realtimeDb.ref(`liveSessions/${sessionId}/chat`).push(chatMessage);
+        await realtimeDb
+          .ref(`liveSessions/${sessionId}/chat`)
+          .push(chatMessage);
 
-        liveSessionNamespace.to(sessionId).emit('chat-message', chatMessage);
+        liveSessionNamespace.to(sessionId).emit("chat-message", chatMessage);
       } catch (error) {
-        console.error('Send chat message error:', error);
-        socket.emit('error', { message: 'Failed to send message' });
+        console.error("Send chat message error:", error);
+        socket.emit("error", { message: "Failed to send message" });
       }
     });
 
     // Understood button
-    socket.on('understood', async ({ sessionId }) => {
+    socket.on("understood", async ({ sessionId }) => {
       try {
-        const sessionRef = db.collection('liveSessions').doc(sessionId);
+        const sessionRef = db.collection("liveSessions").doc(sessionId);
         await sessionRef.update({
-          understoodCount: admin.firestore.FieldValue.increment(1)
+          understoodCount: admin.firestore.FieldValue.increment(1),
         });
 
         const sessionDoc = await sessionRef.get();
         const understoodCount = sessionDoc.data().understoodCount;
 
-        liveSessionNamespace.to(sessionId).emit('understood-count-updated', {
-          understoodCount
+        liveSessionNamespace.to(sessionId).emit("understood-count-updated", {
+          understoodCount,
         });
       } catch (error) {
-        console.error('Understood count error:', error);
+        console.error("Understood count error:", error);
       }
     });
 
     // Material upload notification
-    socket.on('material-uploaded', ({ sessionId, material }) => {
-      liveSessionNamespace.to(sessionId).emit('new-material', material);
+    socket.on("material-uploaded", ({ sessionId, material }) => {
+      liveSessionNamespace.to(sessionId).emit("new-material", material);
+    });
+
+    // Annotation drawing
+    socket.on("draw-annotation", ({ sessionId, slideIndex, data }) => {
+      try {
+        if (socket.role !== "teacher") {
+          socket.emit("error", {
+            message: "Only teacher can draw annotations",
+          });
+          return;
+        }
+
+        liveSessionNamespace.to(sessionId).emit("annotation-draw", {
+          slideIndex,
+          data,
+          timestamp: new Date().toISOString(),
+        });
+
+        console.log(`Annotation drawn by teacher in session ${sessionId}`);
+      } catch (error) {
+        console.error("Annotation draw error:", error);
+      }
     });
 
     // Network quality monitoring
-    socket.on('network-quality-report', async ({ sessionId, quality }) => {
+    socket.on("network-quality-report", async ({ sessionId, quality }) => {
       try {
         // quality: 'good' | 'fair' | 'poor'
-        
-        if (quality === 'poor' && socket.role === 'teacher') {
-          liveSessionNamespace.to(sessionId).emit('network-quality-warning', {
-            message: 'Teacher experiencing network issues',
-            severity: 'warning',
-            timestamp: new Date().toISOString()
+
+        if (quality === "poor" && socket.role === "teacher") {
+          liveSessionNamespace.to(sessionId).emit("network-quality-warning", {
+            message: "Teacher experiencing network issues",
+            severity: "warning",
+            timestamp: new Date().toISOString(),
           });
         }
-        
+
         console.log(`Network quality for ${socket.userName}: ${quality}`);
       } catch (error) {
-        console.error('Network quality report error:', error);
+        console.error("Network quality report error:", error);
       }
     });
 
     // Reconnection handling
-    socket.on('reconnect-to-session', async ({ sessionId, userId }) => {
+    socket.on("reconnect-to-session", async ({ sessionId, userId }) => {
       try {
-        const sessionRef = db.collection('liveSessions').doc(sessionId);
+        const sessionRef = db.collection("liveSessions").doc(sessionId);
         const sessionDoc = await sessionRef.get();
 
         if (!sessionDoc.exists || !sessionDoc.data().isActive) {
-          socket.emit('error', { message: 'Session no longer active' });
+          socket.emit("error", { message: "Session no longer active" });
           return;
         }
 
         socket.join(sessionId);
         socket.sessionId = sessionId;
-        
-        liveSessionNamespace.to(sessionId).emit('user-reconnected', {
+
+        liveSessionNamespace.to(sessionId).emit("user-reconnected", {
           userId,
           userName: socket.userName,
-          timestamp: new Date().toISOString()
+          timestamp: new Date().toISOString(),
         });
 
         console.log(`${socket.userName} reconnected to session ${sessionId}`);
       } catch (error) {
-        console.error('Reconnection error:', error);
-        socket.emit('error', { message: 'Failed to reconnect' });
+        console.error("Reconnection error:", error);
+        socket.emit("error", { message: "Failed to reconnect" });
       }
     });
 
     // Disconnect handling
-    socket.on('disconnect', async () => {
-      console.log('Client disconnected:', socket.id);
+    socket.on("disconnect", async () => {
+      console.log("Client disconnected:", socket.id);
 
       if (socket.sessionId && socket.userId) {
-        liveSessionNamespace.to(socket.sessionId).emit('user-left', {
+        liveSessionNamespace.to(socket.sessionId).emit("user-left", {
           userId: socket.userId,
           userName: socket.userName,
-          role: socket.role
+          role: socket.role,
         });
       }
     });
