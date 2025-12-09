@@ -300,6 +300,30 @@ const initializeSocket = (server) => {
         console.error("Annotation draw error:", error);
       }
     });
+    
+    // Start a new stroke (for undo grouping)
+    socket.on("start-stroke", ({ sessionId, slideIndex }) => {
+      if (socket.role !== "teacher") return;
+      liveSessionNamespace.to(sessionId).emit("start-stroke", { slideIndex });
+    });
+
+    // End the current stroke
+    socket.on("end-stroke", ({ sessionId, slideIndex }) => {
+      if (socket.role !== "teacher") return;
+      liveSessionNamespace.to(sessionId).emit("end-stroke", { slideIndex });
+    });
+
+    // Undo the last stroke
+    socket.on("undo-annotation", ({ sessionId, slideIndex }) => {
+      if (socket.role !== "teacher") return;
+      liveSessionNamespace.to(sessionId).emit("undo-annotation", { slideIndex });
+    });
+
+    // Clear the entire canvas
+    socket.on("clear-canvas", ({ sessionId, slideIndex }) => {
+      if (socket.role !== "teacher") return;
+      liveSessionNamespace.to(sessionId).emit("clear-canvas", { slideIndex });
+    });
 
     // Network quality monitoring
     socket.on("network-quality-report", async ({ sessionId, quality }) => {
