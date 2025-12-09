@@ -122,9 +122,9 @@ exports.uploadMaterial = async (req, res) => {
       return res.status(403).json({ message: 'Unauthorized' });
     }
 
-    if (!session.isActive) {
-      return res.status(400).json({ message: 'Session not active' });
-    }
+    // if (!session.isActive) {
+    //   return res.status(400).json({ message: 'Session not active' });
+    // }
 
     const processedFiles = await uploadMiddleware.processMultipleFiles(req.files, 'default');
 
